@@ -15,10 +15,14 @@ import { ItemDetailsModal } from './components/ItemDetailsModal';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { Footer } from './components/Footer';
 import { AdminDashboard } from './components/AdminDashboard';
+import { AdminLogin } from './components/AdminLogin';
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('ar');
-  const [isAdminView, setIsAdminView] = useState<boolean>(false);
+  const [currentPath, setCurrentPath] = useState<string>(window.location.pathname);
+  const [adminToken, setAdminToken] = useState<string | null>(localStorage.getItem('trendy_admin_token'));
+  const [adminEmail, setAdminEmail] = useState<string>(localStorage.getItem('trendy_admin_email') || 'kirilloshelal@gmail.com');
+
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all');
 
@@ -34,6 +38,20 @@ export default function App() {
     document.documentElement.setAttribute('dir', language === 'ar' ? 'rtl' : 'ltr');
     document.documentElement.setAttribute('lang', language);
   }, [language]);
+
+  // Handle URL changes & popstate (browser back/forward)
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigateTo = (path: string) => {
+    window.history.pushState({}, '', path);
+    setCurrentPath(path);
+  };
 
   const handleToggleLanguage = () => {
     setLanguage((prev) => (prev === 'ar' ? 'en' : 'ar'));
@@ -68,10 +86,9 @@ export default function App() {
   const handleFilterProductsByMaterial = (materialName: string) => {
     setSearchQuery(materialName);
     setSelectedCategory('all');
-    if (isAdminView) {
-      setIsAdminView(false);
+    if (currentPath.startsWith('/admin')) {
+      navigateTo('/');
     }
-    // Smooth scroll to catalogue
     setTimeout(() => {
       const elem = document.getElementById('catalogue');
       if (elem) {
@@ -80,67 +97,91 @@ export default function App() {
     }, 100);
   };
 
+  const handleLoginSuccess = (token: string, email: string) => {
+    setAdminToken(token);
+    setAdminEmail(email);
+  };
+
+  const handleAdminLogout = () => {
+    localStorage.removeItem('trendy_admin_token');
+    setAdminToken(null);
+    navigateTo('/');
+  };
+
+  const isAdminRoute = currentPath === '/admin' || currentPath.startsWith('/admin');
+
+  // --- ROUTE 1: ADMIN ROUTE (/admin) ---
+  if (isAdminRoute) {
+    if (!adminToken) {
+      return (
+        <AdminLogin
+          language={language}
+          onLoginSuccess={handleLoginSuccess}
+          onBackToStore={() => navigateTo('/')}
+        />
+      );
+    }
+
+    return (
+      <AdminDashboard
+        language={language}
+        adminEmail={adminEmail}
+        onLogout={handleAdminLogout}
+        onBackToStore={() => navigateTo('/')}
+      />
+    );
+  }
+
+  // --- ROUTE 2: STOREFRONT ROUTE (/) ---
   return (
     <div className={`min-h-screen flex flex-col bg-[#faf9fd] text-slate-900 ${language === 'ar' ? 'font-arabic' : 'font-sans'}`}>
-      {/* Top Bar Contract (Strict 3-zone one-row bar) */}
+      {/* Top Bar (Strict 3-zone contract, admin tab removed as requested) */}
       <Navbar
         language={language}
         onToggleLanguage={handleToggleLanguage}
         onRequestQuote={handleOpenGeneralQuote}
-        onOpenAdmin={() => setIsAdminView(!isAdminView)}
-        isAdminActive={isAdminView}
       />
 
-      {isAdminView ? (
-        /* Admin Monitoring Dashboard Page */
-        <AdminDashboard
+      {/* Storefront Main Content */}
+      <main className="flex-1">
+        {/* Hero Section */}
+        <Hero
           language={language}
-          onBackToStore={() => setIsAdminView(false)}
-        />
-      ) : (
-        /* Storefront Experience */
-        <main className="flex-1">
-          {/* Hero Section */}
-          <Hero
-            language={language}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onRequestQuote={handleOpenGeneralQuote}
-          />
-
-          {/* Full Services Catalogue with Category-Specific Filters */}
-          <CatalogueSection
-            language={language}
-            searchQuery={searchQuery}
-            onSelectProductForQuote={handleSelectProductForQuote}
-            onViewProductDetails={setDetailsProduct}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
-
-          {/* Dedicated Printing Materials Search Guide */}
-          <MaterialSearchSection
-            language={language}
-            onFilterProductsByMaterial={handleFilterProductsByMaterial}
-          />
-
-          {/* Dynamic Portfolio Section */}
-          <PortfolioSection
-            language={language}
-            onOrderSimilarProject={handleOrderSimilarProject}
-          />
-        </main>
-      )}
-
-      {/* Footer (shown on storefront or bottom) */}
-      {!isAdminView && (
-        <Footer
-          language={language}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
           onRequestQuote={handleOpenGeneralQuote}
         />
-      )}
 
-      {/* Floating WhatsApp Sales Widget (Always available with updated number 01031450254) */}
+        {/* Full Services Catalogue with Category-Specific Filters */}
+        <CatalogueSection
+          language={language}
+          searchQuery={searchQuery}
+          onSelectProductForQuote={handleSelectProductForQuote}
+          onViewProductDetails={setDetailsProduct}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+
+        {/* Dedicated Printing Materials Search Guide */}
+        <MaterialSearchSection
+          language={language}
+          onFilterProductsByMaterial={handleFilterProductsByMaterial}
+        />
+
+        {/* Dynamic Portfolio Section */}
+        <PortfolioSection
+          language={language}
+          onOrderSimilarProject={handleOrderSimilarProject}
+        />
+      </main>
+
+      {/* Footer */}
+      <Footer
+        language={language}
+        onRequestQuote={handleOpenGeneralQuote}
+      />
+
+      {/* Floating WhatsApp Sales Widget (Updated number 01031450254) */}
       <FloatingWhatsApp language={language} />
 
       {/* Request for Quotation (RFQ) Form Modal with Design Upload Option */}
@@ -153,9 +194,6 @@ export default function App() {
         language={language}
         initialProduct={selectedProductForQuote}
         initialCategory={quoteCategory}
-        onQuoteCreated={() => {
-          // If in admin view or store view, updates will be reflected
-        }}
       />
 
       {/* Product Details Specs Modal */}

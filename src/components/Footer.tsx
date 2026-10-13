@@ -137,8 +137,12 @@ export const Footer: React.FC<FooterProps> = ({ language, onRequestQuote }) => {
 
         {/* Quiet Bottom Strip */}
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <div>
-            &copy; {new Date().getFullYear()} TrenDy EvenTy · Shoubra Masr, Cairo. All rights reserved.
+          <div className="flex items-center gap-3">
+            <span>&copy; {new Date().getFullYear()} TrenDy EvenTy · Shoubra Masr, Cairo. All rights reserved.</span>
+            <span aria-hidden="true">·</span>
+            <a href="/admin" className="text-slate-600 hover:text-slate-400 transition-colors">
+              Admin
+            </a>
           </div>
           <div className="flex items-center gap-1">
             <span>{isAr ? 'صنع بكل حب للمناسبات في مصر' : 'Crafted with passion in Egypt'}</span>
