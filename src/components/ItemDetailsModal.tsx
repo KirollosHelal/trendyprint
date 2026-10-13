@@ -28,7 +28,7 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
     const text = encodeURIComponent(
       `Hello Trendy EvenTy Sales,\nI would like to inquire about: ${product.nameEn} (${name})\nPrice estimate: ${product.estimatedPriceRange}\nMOQ: ${product.moq} ${isAr ? product.unitAr : product.unit}\n\nPlease share catalog details and timeline.`
     );
-    window.open(`https://wa.me/201067288084?text=${text}`, '_blank');
+    window.open(`https://wa.me/201031450254?text=${text}`, '_blank');
   };
 
   return (

@@ -9,6 +9,15 @@ export type CategoryId =
 
 export type Language = 'en' | 'ar';
 
+export type QuoteStatus = 'pending' | 'contacted' | 'in_production' | 'completed' | 'cancelled';
+
+export interface UploadedDesign {
+  name: string;
+  size: string;
+  type: string;
+  dataUrl?: string; // base64 representation for preview/download
+}
+
 export interface ProductItem {
   id: string;
   categoryId: CategoryId;
@@ -89,10 +98,23 @@ export interface QuotationRequest {
   scentChoice?: string;
   setupItems?: string[];
   hasArtwork: 'yes' | 'need_design' | 'have_draft';
+  uploadedDesign?: UploadedDesign | null;
   eventDate?: string;
   customerName: string;
   customerPhone: string;
   customerCity: string;
   notes?: string;
-  estimatedTotalEGP?: number;
+  estimatedTotalMinEGP: number;
+  estimatedTotalMaxEGP: number;
+  status: QuoteStatus;
+}
+
+export interface InquiryMessage {
+  id: string;
+  date: string;
+  customerName: string;
+  customerPhone: string;
+  message: string;
+  source: 'whatsapp_widget' | 'contact_form' | 'quick_inquiry';
+  status: 'unread' | 'replied';
 }

@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { ProductItem, PortfolioProject, CategoryId, Language } from './types';
+import { ProductItem, PortfolioProject, CategoryId, Language, QuotationRequest } from './types';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { CatalogueSection } from './components/CatalogueSection';
@@ -14,9 +14,11 @@ import { QuoteModal } from './components/QuoteModal';
 import { ItemDetailsModal } from './components/ItemDetailsModal';
 import { FloatingWhatsApp } from './components/FloatingWhatsApp';
 import { Footer } from './components/Footer';
+import { AdminDashboard } from './components/AdminDashboard';
 
 export default function App() {
   const [language, setLanguage] = useState<Language>('ar');
+  const [isAdminView, setIsAdminView] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategory, setSelectedCategory] = useState<CategoryId>('all');
 
@@ -66,11 +68,16 @@ export default function App() {
   const handleFilterProductsByMaterial = (materialName: string) => {
     setSearchQuery(materialName);
     setSelectedCategory('all');
-    // Smooth scroll to catalogue
-    const elem = document.getElementById('catalogue');
-    if (elem) {
-      elem.scrollIntoView({ behavior: 'smooth' });
+    if (isAdminView) {
+      setIsAdminView(false);
     }
+    // Smooth scroll to catalogue
+    setTimeout(() => {
+      const elem = document.getElementById('catalogue');
+      if (elem) {
+        elem.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 100);
   };
 
   return (
@@ -80,50 +87,63 @@ export default function App() {
         language={language}
         onToggleLanguage={handleToggleLanguage}
         onRequestQuote={handleOpenGeneralQuote}
+        onOpenAdmin={() => setIsAdminView(!isAdminView)}
+        isAdminActive={isAdminView}
       />
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <Hero
+      {isAdminView ? (
+        /* Admin Monitoring Dashboard Page */
+        <AdminDashboard
           language={language}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onBackToStore={() => setIsAdminView(false)}
+        />
+      ) : (
+        /* Storefront Experience */
+        <main className="flex-1">
+          {/* Hero Section */}
+          <Hero
+            language={language}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onRequestQuote={handleOpenGeneralQuote}
+          />
+
+          {/* Full Services Catalogue with Category-Specific Filters */}
+          <CatalogueSection
+            language={language}
+            searchQuery={searchQuery}
+            onSelectProductForQuote={handleSelectProductForQuote}
+            onViewProductDetails={setDetailsProduct}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
+          />
+
+          {/* Dedicated Printing Materials Search Guide */}
+          <MaterialSearchSection
+            language={language}
+            onFilterProductsByMaterial={handleFilterProductsByMaterial}
+          />
+
+          {/* Dynamic Portfolio Section */}
+          <PortfolioSection
+            language={language}
+            onOrderSimilarProject={handleOrderSimilarProject}
+          />
+        </main>
+      )}
+
+      {/* Footer (shown on storefront or bottom) */}
+      {!isAdminView && (
+        <Footer
+          language={language}
           onRequestQuote={handleOpenGeneralQuote}
         />
+      )}
 
-        {/* Full Services Catalogue with Category-Specific Filters */}
-        <CatalogueSection
-          language={language}
-          searchQuery={searchQuery}
-          onSelectProductForQuote={handleSelectProductForQuote}
-          onViewProductDetails={setDetailsProduct}
-          selectedCategory={selectedCategory}
-          onSelectCategory={setSelectedCategory}
-        />
-
-        {/* Dedicated Printing Materials Search Guide */}
-        <MaterialSearchSection
-          language={language}
-          onFilterProductsByMaterial={handleFilterProductsByMaterial}
-        />
-
-        {/* Dynamic Portfolio Section */}
-        <PortfolioSection
-          language={language}
-          onOrderSimilarProject={handleOrderSimilarProject}
-        />
-      </main>
-
-      {/* Footer */}
-      <Footer
-        language={language}
-        onRequestQuote={handleOpenGeneralQuote}
-      />
-
-      {/* Floating WhatsApp Sales Widget */}
+      {/* Floating WhatsApp Sales Widget (Always available with updated number 01031450254) */}
       <FloatingWhatsApp language={language} />
 
-      {/* Request for Quotation (RFQ) Form Modal */}
+      {/* Request for Quotation (RFQ) Form Modal with Design Upload Option */}
       <QuoteModal
         isOpen={isQuoteModalOpen}
         onClose={() => {
@@ -133,6 +153,9 @@ export default function App() {
         language={language}
         initialProduct={selectedProductForQuote}
         initialCategory={quoteCategory}
+        onQuoteCreated={() => {
+          // If in admin view or store view, updates will be reflected
+        }}
       />
 
       {/* Product Details Specs Modal */}

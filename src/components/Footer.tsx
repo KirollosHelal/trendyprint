@@ -103,8 +103,8 @@ export const Footer: React.FC<FooterProps> = ({ language, onRequestQuote }) => {
 
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-purple-400 shrink-0" />
-                <a href="tel:01067288084" className="hover:text-white transition-colors font-mono">
-                  01067288084 / +20 106 728 8084
+                <a href="tel:01031450254" className="hover:text-white transition-colors font-mono">
+                  01031450254 / +20 103 145 0254
                 </a>
               </li>
 

@@ -119,7 +119,9 @@ export const Hero: React.FC<HeroProps> = ({
               </button>
 
               <a
-                href="https://wa.me/201067288084?text=Hello%20Trendy%20EvenTy%2C%20I%20would%20like%20to%20inquire%20about%20your%20services%20from%20your%20catalogue."
+                href={`https://wa.me/201031450254?text=${encodeURIComponent(
+                  'Hello Trendy EvenTy, I would like to inquire about your services from your catalogue.'
+                )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-3 text-sm font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 rounded-xl transition-colors"
@@ -157,8 +159,8 @@ export const Hero: React.FC<HeroProps> = ({
                     ? 'جودة طباعة استثنائية وخامات مختارة بعناية لأجمل اللحظات'
                     : 'Exceptional Print Quality & Curated Materials for Every Moment'}
                 </h3>
-                <p className="text-xs text-purple-200 mt-1">
-                  8 El basaa Street, Shoubra Masr · +20 106 728 8084
+                <p className="text-xs text-purple-200 mt-1 font-mono">
+                  8 El basaa Street, Shoubra Masr · +20 103 145 0254
                 </p>
               </div>
             </div>

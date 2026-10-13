@@ -207,7 +207,7 @@ export const MaterialSearchSection: React.FC<MaterialSearchSectionProps> = ({
                   </button>
 
                   <a
-                    href={`https://wa.me/201067288084?text=${encodeURIComponent(
+                    href={`https://wa.me/201031450254?text=${encodeURIComponent(
                       `Hello Trendy EvenTy, I have a question about this material: ${mat.nameEn} (${mat.thicknessWeight}). What is the cost and minimum order?`
                     )}`}
                     target="_blank"

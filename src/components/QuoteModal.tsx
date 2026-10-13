@@ -1,7 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { ProductItem, CategoryId, Language, QuotationRequest } from '../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { ProductItem, CategoryId, Language, QuotationRequest, UploadedDesign } from '../types';
 import { CATALOGUE_PRODUCTS } from '../data/catalogueData';
-import { X, MessageCircle, CheckCircle2, Calculator, Send, Copy, FileText, Sparkles } from 'lucide-react';
+import { CONTACT_INFO, getWhatsAppLink } from '../config/contact';
+import { AdminStore } from '../services/adminStore';
+import {
+  X,
+  MessageCircle,
+  CheckCircle2,
+  Calculator,
+  Send,
+  Copy,
+  FileText,
+  Upload,
+  Paperclip,
+  Check,
+  AlertCircle,
+  Trash2,
+  Image as ImageIcon,
+} from 'lucide-react';
 
 interface QuoteModalProps {
   isOpen: boolean;
@@ -9,6 +25,7 @@ interface QuoteModalProps {
   language: Language;
   initialProduct?: ProductItem | null;
   initialCategory?: CategoryId;
+  onQuoteCreated?: (quote: QuotationRequest) => void;
 }
 
 export const QuoteModal: React.FC<QuoteModalProps> = ({
@@ -17,8 +34,10 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   language,
   initialProduct,
   initialCategory,
+  onQuoteCreated,
 }) => {
   const isAr = language === 'ar';
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [category, setCategory] = useState<CategoryId>(initialCategory || 'printing');
   const [selectedProduct, setSelectedProduct] = useState<string>(initialProduct?.id || '');
@@ -28,6 +47,10 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
   const [materialChoice, setMaterialChoice] = useState<string>('couche-350');
   const [finishingChoice, setFinishingChoice] = useState<string>('matte-laminate');
   const [hasArtwork, setHasArtwork] = useState<'yes' | 'need_design' | 'have_draft'>('have_draft');
+
+  // Design Upload
+  const [uploadedDesign, setUploadedDesign] = useState<UploadedDesign | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
 
   // Giveaways / Candles / Resin specific
   const [occasionType, setOccasionType] = useState<string>('sebou3');
@@ -120,6 +143,47 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
 
   const estimate = calculateEstimate();
 
+  // Handle File Upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
+    const sizeStr = file.size < 1024 * 1024 
+      ? `${(file.size / 1024).toFixed(0)} KB` 
+      : `${sizeInMB} MB`;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUploadedDesign({
+        name: file.name,
+        size: sizeStr,
+        type: file.type || 'application/octet-stream',
+        dataUrl: reader.result as string,
+      });
+      setHasArtwork('yes');
+      setIsUploading(false);
+    };
+    reader.onerror = () => {
+      setUploadedDesign({
+        name: file.name,
+        size: sizeStr,
+        type: file.type || 'application/octet-stream',
+      });
+      setHasArtwork('yes');
+      setIsUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveUploadedFile = () => {
+    setUploadedDesign(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   // Generate WhatsApp Message
   const constructWhatsAppMessage = () => {
     const currentProd = CATALOGUE_PRODUCTS.find((p) => p.id === selectedProduct);
@@ -143,10 +207,14 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
     msg += `*الخدمة:* ${prodName} (${catLabel})\n`;
     msg += `*الكمية المطلوبة:* ${quantity}\n`;
 
+    if (uploadedDesign) {
+      msg += `*ملف التصميم:* تم إرفاق ملف (${uploadedDesign.name} - ${uploadedDesign.size})\n`;
+    }
+
     if (category === 'printing') {
       msg += `*الخامة:* ${materialChoice}\n`;
       msg += `*التشطيب:* ${finishingChoice}\n`;
-      msg += `*جاهزية التصميم:* ${hasArtwork}\n`;
+      msg += `*جاهزية التصميم:* ${uploadedDesign ? 'مرفق بالتصميم' : hasArtwork}\n`;
     } else if (category === 'candles' || category === 'resin' || category === 'giveaways_others') {
       msg += `*المناسبة:* ${occasionType}\n`;
       msg += `*الأسماء والتاريخ:* ${customNamesDate || 'لم يحدد بعد'}\n`;
@@ -163,27 +231,66 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
 
     msg += `*التقدير التقريبي:* ${estimate.min.toLocaleString()} - ${estimate.max.toLocaleString()} ج.م\n`;
     msg += `---------------------------------\n`;
-    msg += `برجاء تأكيد الإتاحة ومراجعة التكلفة والبدء في التنفيذ. شكراً لكم!`;
+    msg += `يرجى تأكيد الإتاحة ومراجعة التكلفة والبدء في التنفيذ. شكراً لكم!`;
 
-    return encodeURIComponent(msg);
+    return msg;
   };
 
   const handleSendToWhatsApp = () => {
-    const text = constructWhatsAppMessage();
-    const url = `https://wa.me/201067288084?text=${text}`;
+    // Record quote first
+    saveQuoteRecord();
+    const msg = constructWhatsAppMessage();
+    const url = getWhatsAppLink(msg);
     window.open(url, '_blank');
+  };
+
+  const saveQuoteRecord = () => {
+    const newRef = `#TE-${Math.floor(1000 + Math.random() * 9000)}`;
+    const currentProd = CATALOGUE_PRODUCTS.find((p) => p.id === selectedProduct);
+    const prodName = currentProd ? `${currentProd.nameEn} (${currentProd.nameAr})` : selectedProduct;
+
+    const newQuote: QuotationRequest = {
+      id: newRef,
+      date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      category,
+      itemSelection: prodName,
+      quantity,
+      materialChoice,
+      finishingChoice,
+      occasionType,
+      customNamesDate,
+      colorTheme,
+      scentChoice,
+      setupItems: decorSetupItems,
+      hasArtwork: uploadedDesign ? 'yes' : hasArtwork,
+      uploadedDesign: uploadedDesign || null,
+      eventDate,
+      customerName: customerName || (isAr ? 'عميل عبر الموقع' : 'Online Client'),
+      customerPhone: customerPhone || CONTACT_INFO.phone,
+      customerCity,
+      notes,
+      estimatedTotalMinEGP: estimate.min,
+      estimatedTotalMaxEGP: estimate.max,
+      status: 'pending',
+    };
+
+    AdminStore.addQuote(newQuote);
+    if (onQuoteCreated) {
+      onQuoteCreated(newQuote);
+    }
+    setQuoteRef(newRef);
+    setIsSubmitted(true);
+    return newQuote;
   };
 
   const handleSubmitSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const newRef = `#TE-${Math.floor(1000 + Math.random() * 9000)}`;
-    setQuoteRef(newRef);
-    setIsSubmitted(true);
+    saveQuoteRecord();
   };
 
   const handleCopySummary = () => {
     const currentProd = CATALOGUE_PRODUCTS.find((p) => p.id === selectedProduct);
-    const summary = `TrenDy EvenTy Quote ${quoteRef}\nProduct: ${currentProd?.nameEn || selectedProduct}\nQuantity: ${quantity}\nEstimate: ${estimate.min} - ${estimate.max} EGP\nCustomer: ${customerName} (${customerPhone})\nLocation: Shoubra Masr, Cairo`;
+    const summary = `TrenDy EvenTy Quote ${quoteRef}\nProduct: ${currentProd?.nameEn || selectedProduct}\nQuantity: ${quantity}\nEstimate: ${estimate.min} - ${estimate.max} EGP\nCustomer: ${customerName} (${customerPhone})\nWhatsApp: ${CONTACT_INFO.phoneDisplay}\nLocation: Shoubra Masr, Cairo`;
     navigator.clipboard.writeText(summary);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -206,7 +313,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
               {isAr ? 'نموذج طلب التسعيرة والمقايسة' : 'Request for Quotation (RFQ)'}
             </div>
             <h3 className="text-lg font-extrabold text-slate-900">
-              {isAr ? 'احصل على عرض سعر رسمي فوري' : 'Get Instant Tailored Estimate'}
+              {isAr ? 'احصل على عرض سعر رسمي فوري مع رفع التصميم' : 'Get Instant Tailored Estimate & Upload Design'}
             </h3>
           </div>
           <button
@@ -226,15 +333,15 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
             </div>
 
             <span className="text-xs font-semibold text-purple-800 uppercase tracking-wider">
-              {isAr ? 'تم استلام طلب المقايسة بنجاح' : 'Quotation Submitted Successfully'}
+              {isAr ? 'تم حفظ طلب المقايسة وتسجيله في النظام' : 'Quotation Saved in System'}
             </span>
             <h3 className="text-xl font-extrabold text-slate-900 mt-1 mb-2">
               {isAr ? `رقم الطلب المرجعي: ${quoteRef}` : `Reference ID: ${quoteRef}`}
             </h3>
             <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto mb-6">
               {isAr
-                ? 'فريق مبيعات تريندي إيفنتي بشبرا مصر جاهز لمساعدتك! يمكنك إرسال هذه المقايسة مباشرة للواتساب للتأكيد الفوري.'
-                : 'Our sales team at Shoubra Masr is ready to assist you. Send this directly to WhatsApp for instant confirmation.'}
+                ? `فريق مبيعات تريندي إيفنتي بشبرا مصر جاهز لمساعدتك عبر الواتساب (${CONTACT_INFO.phoneDisplay}). تم حفظ طلبك ومتابعته الآن!`
+                : `Our sales team at Shoubra Masr is ready to assist you on WhatsApp (${CONTACT_INFO.phoneDisplay}). Your quote and design file are saved!`}
             </p>
 
             {/* Estimated Pricing Badge */}
@@ -248,6 +355,12 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
               <div className="text-[11px] text-slate-500 mt-1">
                 {quantity} {isAr ? 'قطعة / وحدة' : 'Units'} · {isAr ? 'شامل الطباعة والتجهيز' : 'Including custom fabrication'}
               </div>
+              {uploadedDesign && (
+                <div className="mt-2 pt-2 border-t border-purple-200 text-xs text-purple-900 font-medium flex items-center justify-center gap-1">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>{isAr ? `ملف التصميم مرفق: ${uploadedDesign.name}` : `Design attached: ${uploadedDesign.name}`}</span>
+                </div>
+              )}
             </div>
 
             {/* Post-submit buttons */}
@@ -258,7 +371,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                 className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-colors shadow-sm"
               >
                 <MessageCircle className="w-4 h-4" />
-                <span>{isAr ? 'فتح المحادثة في الواتساب الآن' : 'Chat & Confirm on WhatsApp'}</span>
+                <span>{isAr ? `إرسال للواتساب (${CONTACT_INFO.phoneDisplay})` : `Chat & Confirm on WhatsApp (${CONTACT_INFO.phoneDisplay})`}</span>
               </button>
 
               <button
@@ -368,10 +481,82 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
               </div>
             </div>
 
-            {/* Step 3: Category-Specific Customized Fields */}
+            {/* Step 3: NEW REQUESTED FEATURE - UPLOAD YOUR DESIGN OPTION */}
+            <div className="bg-purple-50/70 p-4 rounded-xl border border-purple-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-purple-950 uppercase tracking-wider flex items-center gap-1.5">
+                  <Upload className="w-4 h-4 text-purple-700" />
+                  <span>{isAr ? 'رفع ملف التصميم الخاص بك (اختياري):' : 'Upload Your Design File (Optional):'}</span>
+                </label>
+                <span className="text-[11px] text-purple-700 font-medium">
+                  PDF · AI · PSD · PNG · JPG · SVG
+                </span>
+              </div>
+
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.ai,.psd,.svg,.png,.jpg,.jpeg,.eps"
+                onChange={handleFileChange}
+                className="hidden"
+                id="design-file-upload"
+              />
+
+              {!uploadedDesign ? (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-purple-300 hover:border-purple-600 rounded-xl p-5 text-center bg-white cursor-pointer transition-colors group"
+                >
+                  <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center mx-auto mb-2 group-hover:scale-105 transition-transform">
+                    <Paperclip className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs font-bold text-slate-800">
+                    {isAr ? 'اضغط هنا لرفع ملف التصميم من جهازك' : 'Click to browse and upload your design'}
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    {isAr
+                      ? 'يدعم ملفات الفيكتور والـ PDF عالية الجودة والصور (حتى 50 ميجابايت)'
+                      : 'Supports high-res PDF, vector artwork, or images (up to 50MB)'}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-white p-3 rounded-xl border border-purple-200 flex items-center justify-between gap-3 shadow-2xs">
+                  <div className="flex items-center gap-2.5 overflow-hidden">
+                    <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-800 flex items-center justify-center shrink-0">
+                      {uploadedDesign.type.startsWith('image/') ? (
+                        <ImageIcon className="w-4 h-4" />
+                      ) : (
+                        <FileText className="w-4 h-4" />
+                      )}
+                    </div>
+                    <div className="overflow-hidden">
+                      <div className="text-xs font-bold text-slate-900 truncate">
+                        {uploadedDesign.name}
+                      </div>
+                      <div className="text-[11px] text-emerald-700 font-medium flex items-center gap-1">
+                        <Check className="w-3 h-3" />
+                        <span>{isAr ? `تم الإرفاق بنجاح (${uploadedDesign.size})` : `Attached (${uploadedDesign.size})`}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRemoveUploadedFile}
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0"
+                    title={isAr ? 'حذف الملف' : 'Remove file'}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Step 4: Category-Specific Customized Fields */}
             {category === 'printing' && (
-              <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 space-y-4">
-                <span className="text-xs font-bold text-purple-950 uppercase tracking-wider block">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
                   {isAr ? 'مواصفات الطباعة والخامات:' : 'Printing & Material Specifications:'}
                 </span>
 
@@ -412,37 +597,39 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                   </div>
                 </div>
 
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1 text-xs">
-                    {isAr ? 'حالة ملفات التصميم:' : 'Artwork Readiness:'}
-                  </label>
-                  <div className="grid grid-cols-3 gap-2 text-[11px]">
-                    {[
-                      { id: 'yes', labelAr: 'عندي تصميم جاهز', labelEn: 'Ready PDF/AI' },
-                      { id: 'have_draft', labelAr: 'معي لوجو وبيانات', labelEn: 'Have Logo/Text' },
-                      { id: 'need_design', labelAr: 'أحتاج تصميم جديد', labelEn: 'Need Design' },
-                    ].map((art) => (
-                      <button
-                        key={art.id}
-                        type="button"
-                        onClick={() => setHasArtwork(art.id as any)}
-                        className={`p-2 rounded-lg border text-center transition-colors ${
-                          hasArtwork === art.id
-                            ? 'border-purple-700 bg-purple-100 text-purple-900 font-bold'
-                            : 'border-slate-200 bg-white text-slate-600'
-                        }`}
-                      >
-                        {isAr ? art.labelAr : art.labelEn}
-                      </button>
-                    ))}
+                {!uploadedDesign && (
+                  <div>
+                    <label className="block font-semibold text-slate-700 mb-1 text-xs">
+                      {isAr ? 'حالة ملفات التصميم:' : 'Artwork Readiness:'}
+                    </label>
+                    <div className="grid grid-cols-3 gap-2 text-[11px]">
+                      {[
+                        { id: 'yes', labelAr: 'سأرسله لاحقاً بالواتساب', labelEn: 'Send via WhatsApp' },
+                        { id: 'have_draft', labelAr: 'معي لوجو وبيانات', labelEn: 'Have Logo/Text' },
+                        { id: 'need_design', labelAr: 'أحتاج تصميم جديد', labelEn: 'Need Design' },
+                      ].map((art) => (
+                        <button
+                          key={art.id}
+                          type="button"
+                          onClick={() => setHasArtwork(art.id as any)}
+                          className={`p-2 rounded-lg border text-center transition-colors ${
+                            hasArtwork === art.id
+                              ? 'border-purple-700 bg-purple-100 text-purple-900 font-bold'
+                              : 'border-slate-200 bg-white text-slate-600'
+                          }`}
+                        >
+                          {isAr ? art.labelAr : art.labelEn}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
 
             {(category === 'candles' || category === 'resin' || category === 'giveaways_others') && (
-              <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 space-y-4">
-                <span className="text-xs font-bold text-purple-950 uppercase tracking-wider block">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
                   {isAr ? 'تخصيص التوزيعات والمناسبة:' : 'Personalization & Occasion:'}
                 </span>
 
@@ -473,7 +660,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                       type="text"
                       value={customNamesDate}
                       onChange={(e) => setCustomNamesDate(e.target.value)}
-                      placeholder={isAr ? 'مثال: أحمد ونور - 15/11/2025' : 'e.g. Sarah & Michael - Oct 2026'}
+                      placeholder={isAr ? 'مثال: أحمد ونور - 15/11/2026' : 'e.g. Sarah & Michael - Oct 2026'}
                       className="w-full p-2 bg-white border border-slate-200 rounded-lg text-xs"
                     />
                   </div>
@@ -516,8 +703,8 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
             )}
 
             {category === 'decor' && (
-              <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 space-y-4">
-                <span className="text-xs font-bold text-purple-950 uppercase tracking-wider block">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
                   {isAr ? 'تجهيزات الديكور وتاريخ الفعالية:' : 'Decor Package & Event Date:'}
                 </span>
 
@@ -548,7 +735,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
               </div>
             )}
 
-            {/* Step 4: Customer Details */}
+            {/* Step 5: Customer Details */}
             <div className="border-t border-slate-100 pt-4 space-y-3">
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wider block">
                 {isAr ? 'بيانات التواصل والتسليم:' : 'Contact & Delivery Information:'}
@@ -638,7 +825,7 @@ export const QuoteModal: React.FC<QuoteModalProps> = ({
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 rounded-xl transition-colors"
               >
                 <MessageCircle className="w-4 h-4 text-emerald-600" />
-                <span>{isAr ? 'إرسال المقايسة مباشرة للواتساب' : 'Send Directly to WhatsApp'}</span>
+                <span>{isAr ? `إرسال للواتساب (${CONTACT_INFO.phoneDisplay})` : `Send to WhatsApp (${CONTACT_INFO.phoneDisplay})`}</span>
               </button>
 
               <button

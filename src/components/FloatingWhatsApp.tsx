@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Language } from '../types';
-import { MessageCircle, X, Send, Sparkles, Phone } from 'lucide-react';
+import { CONTACT_INFO, getWhatsAppLink } from '../config/contact';
+import { AdminStore } from '../services/adminStore';
+import { MessageCircle, X, Send, Phone, Check } from 'lucide-react';
 
 interface FloatingWhatsAppProps {
   language: Language;
@@ -10,6 +12,9 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language }) 
   const isAr = language === 'ar';
   const [isOpen, setIsOpen] = useState(false);
   const [customText, setCustomText] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [sentNotice, setSentNotice] = useState(false);
 
   const QUICK_QUESTIONS = [
     {
@@ -27,9 +32,26 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language }) 
   ];
 
   const handleSend = (text: string) => {
-    const encoded = encodeURIComponent(text);
-    window.open(`https://wa.me/201067288084?text=${encoded}`, '_blank');
-    setIsOpen(false);
+    // Record message in AdminStore
+    const newMsg = {
+      id: `msg-${Date.now().toString().slice(-4)}`,
+      date: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      customerName: customerName || (isAr ? 'زائر واتساب' : 'WhatsApp Visitor'),
+      customerPhone: customerPhone || CONTACT_INFO.phone,
+      message: text,
+      source: 'whatsapp_widget' as const,
+      status: 'unread' as const,
+    };
+    AdminStore.addMessage(newMsg);
+
+    const url = `https://wa.me/${CONTACT_INFO.whatsAppDigits}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+    setSentNotice(true);
+    setTimeout(() => {
+      setSentNotice(false);
+      setIsOpen(false);
+      setCustomText('');
+    }, 1500);
   };
 
   return (
@@ -54,8 +76,8 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language }) 
                 <h4 className="text-sm font-bold leading-tight">
                   {isAr ? 'فريق مبيعات تريندي إيفنتي' : 'TrenDy EvenTy Sales'}
                 </h4>
-                <p className="text-[11px] text-purple-200">
-                  {isAr ? 'متصل الآن · شبرا مصر' : 'Online · Shoubra Masr'}
+                <p className="text-[11px] text-purple-200 font-mono">
+                  {CONTACT_INFO.phoneDisplay} · {isAr ? 'متصل الآن' : 'Online'}
                 </p>
               </div>
             </div>
@@ -70,62 +92,93 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language }) 
 
           {/* Quick Prompts Body */}
           <div className="p-4 bg-slate-50/70 space-y-3">
-            <p className="text-xs text-slate-600">
-              {isAr
-                ? 'أهلاً بك! كيف نساعدك اليوم في تجهيز مناسبتك أو طباعة فكرتك؟'
-                : 'Welcome! How can our printing & event specialists help you today?'}
-            </p>
-
-            <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                {isAr ? 'أسئلة شائعة بنقرة واحدة:' : 'Quick Questions:'}
-              </span>
-              {QUICK_QUESTIONS.map((q, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSend(isAr ? q.ar : q.en)}
-                  className="w-full text-start p-2 bg-white hover:bg-purple-50 text-[11px] text-slate-700 hover:text-purple-950 rounded-lg border border-slate-200 transition-colors shadow-2xs"
-                >
-                  {isAr ? q.ar : q.en}
-                </button>
-              ))}
-            </div>
-
-            {/* Custom Input */}
-            <div className="pt-2 border-t border-slate-200/80">
-              <div className="flex items-center gap-1.5">
-                <input
-                  type="text"
-                  value={customText}
-                  onChange={(e) => setCustomText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && customText.trim()) {
-                      handleSend(customText);
-                    }
-                  }}
-                  placeholder={isAr ? 'اكتب رسالتك للمبيعات...' : 'Type your message...'}
-                  className="flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-                />
-                <button
-                  onClick={() => customText.trim() && handleSend(customText)}
-                  disabled={!customText.trim()}
-                  className="p-2 text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg transition-colors shrink-0"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
+            {sentNotice ? (
+              <div className="py-6 text-center text-emerald-700 space-y-2">
+                <Check className="w-8 h-8 mx-auto" />
+                <p className="text-xs font-bold">
+                  {isAr ? 'جاري فتح المحادثة في الواتساب...' : 'Opening WhatsApp conversation...'}
+                </p>
               </div>
-            </div>
+            ) : (
+              <>
+                <p className="text-xs text-slate-600">
+                  {isAr
+                    ? `أهلاً بك! تواصل مباشرة مع فريق المبيعات على الواتساب (${CONTACT_INFO.phoneDisplay}) بشبرا مصر.`
+                    : `Welcome! Connect directly with our sales specialists on WhatsApp (${CONTACT_INFO.phoneDisplay}).`}
+                </p>
 
-            {/* Phone link fallback */}
-            <div className="text-center pt-1">
-              <a
-                href="tel:01067288084"
-                className="text-[11px] text-slate-500 hover:text-purple-900 font-medium inline-flex items-center gap-1"
-              >
-                <Phone className="w-3 h-3 text-purple-700" />
-                <span>{isAr ? 'أو اتصل مباشرة: 01067288084' : 'Or Call: +20 106 728 8084'}</span>
-              </a>
-            </div>
+                {/* Optional Customer info inputs */}
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder={isAr ? 'اسمك (اختياري)' : 'Your Name'}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-600"
+                  />
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder={isAr ? 'رقم الهاتف' : 'Your Phone'}
+                    className="p-1.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-600 font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
+                    {isAr ? 'أسئلة شائعة بنقرة واحدة:' : 'Quick Questions:'}
+                  </span>
+                  {QUICK_QUESTIONS.map((q, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSend(isAr ? q.ar : q.en)}
+                      className="w-full text-start p-2 bg-white hover:bg-purple-50 text-[11px] text-slate-700 hover:text-purple-950 rounded-lg border border-slate-200 transition-colors shadow-2xs"
+                    >
+                      {isAr ? q.ar : q.en}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom Input */}
+                <div className="pt-2 border-t border-slate-200/80">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={customText}
+                      onChange={(e) => setCustomText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && customText.trim()) {
+                          handleSend(customText);
+                        }
+                      }}
+                      placeholder={isAr ? 'اكتب رسالتك للمبيعات...' : 'Type your message...'}
+                      className="flex-1 px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                    />
+                    <button
+                      onClick={() => customText.trim() && handleSend(customText)}
+                      disabled={!customText.trim()}
+                      className="p-2 text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 rounded-lg transition-colors shrink-0"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Phone link fallback with updated number */}
+                <div className="text-center pt-1">
+                  <a
+                    href={`tel:${CONTACT_INFO.phone}`}
+                    className="text-[11px] text-slate-500 hover:text-purple-900 font-medium inline-flex items-center gap-1"
+                  >
+                    <Phone className="w-3 h-3 text-purple-700" />
+                    <span>
+                      {isAr ? `أو اتصل مباشرة: ${CONTACT_INFO.phoneDisplay}` : `Or Call: ${CONTACT_INFO.phoneInternational}`}
+                    </span>
+                  </a>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -139,7 +192,7 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language }) 
       >
         <MessageCircle className="w-5 h-5 shrink-0" />
         <span className="text-xs font-bold whitespace-nowrap">
-          {isOpen ? (isAr ? 'إغلاق الدردشة' : 'Close Chat') : (isAr ? 'تواصل مع المبيعات' : 'Chat on WhatsApp')}
+          {isOpen ? (isAr ? 'إغلاق الدردشة' : 'Close Chat') : (isAr ? `واتساب ${CONTACT_INFO.phoneDisplay}` : `Chat ${CONTACT_INFO.phoneDisplay}`)}
         </span>
       </button>
     </div>

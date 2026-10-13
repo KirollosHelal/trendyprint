@@ -102,7 +102,7 @@ export const CatalogueSection: React.FC<CatalogueSectionProps> = ({
     const text = encodeURIComponent(
       `Hello Trendy EvenTy Sales,\nI would like to inquire about this service from your catalogue:\n*Item:* ${itemName}\n*Min Order:* ${item.moq} ${isAr ? item.unitAr : item.unit}\n*Estimated Range:* ${item.estimatedPriceRange}\n\nPlease let me know availability and exact quotation.`
     );
-    return `https://wa.me/201067288084?text=${text}`;
+    return `https://wa.me/201031450254?text=${text}`;
   };
 
   return (
