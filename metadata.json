@@ -1,0 +1,6 @@
+{
+  "name": "TrenDy EvenTy | Print Shop & Event Services",
+  "description": "Comprehensive print shop catalogue, material guide, category-specific RFQ quote generator, and WhatsApp integration for TrenDy EvenTy.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
