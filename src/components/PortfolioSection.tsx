@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { PortfolioProject, Language } from '../types';
 import { PORTFOLIO_PROJECTS } from '../data/portfolioData';
 import { Eye, Clock, CheckCircle2, X, ArrowUpRight, FileText } from 'lucide-react';
+import { handleImageError } from '../assets/images';
 
 interface PortfolioSectionProps {
   language: Language;
@@ -93,6 +94,7 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                 >
                   <img
                     src={project.image}
+                    onError={(e) => handleImageError(e, project.category)}
                     alt={title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-104"
                     referrerPolicy="no-referrer"
@@ -140,7 +142,7 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                     <button
                       onClick={() => setActiveModalProject(project)}
                       type="button"
-                      className="text-xs font-semibold text-purple-900 hover:text-purple-700 flex items-center gap-1"
+                      className="text-xs font-semibold text-purple-900 hover:text-purple-700 flex items-center gap-1 min-h-[36px]"
                     >
                       <span>{isAr ? 'تفاصيل المخرجات' : 'Deliverables'}</span>
                       <ArrowUpRight className="w-3.5 h-3.5" />
@@ -149,7 +151,7 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({
                     <button
                       onClick={() => onOrderSimilarProject(project)}
                       type="button"
-                      className="px-3 py-1.5 text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 active:bg-purple-200 rounded-lg transition-colors border border-purple-200/80"
+                      className="px-3 py-1.5 text-xs font-bold text-purple-900 bg-purple-50 hover:bg-purple-100 active:bg-purple-200 rounded-lg transition-colors border border-purple-200/80 min-h-[36px]"
                     >
                       {isAr ? 'طلب مشروع مماثل' : 'Order Similar'}
                     </button>
@@ -163,18 +165,19 @@ export const PortfolioSection: React.FC<PortfolioSectionProps> = ({
         {/* Project Details Modal */}
         {activeModalProject && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
             role="dialog"
             aria-modal="true"
           >
             <div 
-              className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200"
+              className="bg-white rounded-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Image */}
               <div className="relative aspect-16/9 w-full bg-slate-900 overflow-hidden">
                 <img
                   src={activeModalProject.image}
+                  onError={(e) => handleImageError(e, activeModalProject.category)}
                   alt={isAr ? activeModalProject.titleAr : activeModalProject.titleEn}
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"

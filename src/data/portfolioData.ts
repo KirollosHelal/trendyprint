@@ -1,4 +1,5 @@
 import { PortfolioProject } from '../types';
+import { IMAGES } from '../assets/images';
 
 export const PORTFOLIO_PROJECTS: PortfolioProject[] = [
   {
@@ -8,7 +9,7 @@ export const PORTFOLIO_PROJECTS: PortfolioProject[] = [
     category: 'corporate',
     categoryLabelEn: 'Corporate Branding',
     categoryLabelAr: 'مؤتمرات وهوية شركات',
-    image: '/src/assets/images/trendy_portfolio_corporate_1791875484625.jpg',
+    image: IMAGES.portfolioCorporate,
     clientEn: 'GILS International Conferences, Cairo',
     clientAr: 'مؤتمرات GILS الدولية - القاهرة',
     occasionEn: 'Annual Leadership Summit (800+ Delegates)',
@@ -29,7 +30,7 @@ export const PORTFOLIO_PROJECTS: PortfolioProject[] = [
     category: 'weddings',
     categoryLabelEn: 'Weddings & Engagements',
     categoryLabelAr: 'أفراح وخطوبة',
-    image: '/src/assets/images/trendy_event_decor_1791875461108.jpg',
+    image: IMAGES.eventDecor,
     clientEn: 'Sarah & Michael, New Cairo',
     clientAr: 'سارة ومايكل - التجمع الخامس',
     occasionEn: 'Autumn Garden Wedding (350 Guests)',
@@ -50,7 +51,7 @@ export const PORTFOLIO_PROJECTS: PortfolioProject[] = [
     category: 'sebou3',
     categoryLabelEn: 'Sebou3 & Baby Shower',
     categoryLabelAr: 'سبوع واستقبال مواليد',
-    image: '/src/assets/images/trendy_portfolio_baby_shower_1791875483703.jpg',
+    image: IMAGES.portfolioBabyShower,
     clientEn: 'Eng. Karim & Dr. Nada, Heliopolis',
     clientAr: 'م. كريم ود. ندى - مصر الجديدة',
     occasionEn: 'Newborn Welcome Celebration (150 Guests)',
@@ -71,7 +72,7 @@ export const PORTFOLIO_PROJECTS: PortfolioProject[] = [
     category: 'giveaways',
     categoryLabelEn: 'Handmade Giveaways',
     categoryLabelAr: 'هدايا وتوزيعات يدوية',
-    image: '/src/assets/images/trendy_resin_crafts_1791875461581.jpg',
+    image: IMAGES.resinCrafts,
     clientEn: 'Bridal Henna Night & VIP Favors',
     clientAr: 'ليلة حنة العروس وتوزيعات المقربات',
     occasionEn: 'Henna & Bridal Shower Celebration',
@@ -92,7 +93,7 @@ export const PORTFOLIO_PROJECTS: PortfolioProject[] = [
     category: 'giveaways',
     categoryLabelEn: 'Candle Favors',
     categoryLabelAr: 'توزيعات شموع عطرية',
-    image: '/src/assets/images/trendy_candle_giveaways_1791875460402.jpg',
+    image: IMAGES.candleGiveaways,
     clientEn: 'Private Katb Ketab & Engagement',
     clientAr: 'حفل كتب كتاب وخطوبة عائلي راقي',
     occasionEn: 'VIP Family Favors (200 Units)',
@@ -113,7 +114,7 @@ export const PORTFOLIO_PROJECTS: PortfolioProject[] = [
     category: 'corporate',
     categoryLabelEn: 'Corporate Branding',
     categoryLabelAr: 'مؤتمرات وهوية شركات',
-    image: '/src/assets/images/trendy_print_services_1791875459940.jpg',
+    image: IMAGES.printServices,
     clientEn: 'Forge & Press Consulting, Smart Village Cairo',
     clientAr: 'شركة فورج آند بريس للاستشارات - القرية الذكية',
     occasionEn: 'Company Rebranding & Annual Employee Kit',

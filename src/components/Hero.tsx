@@ -1,6 +1,7 @@
 import React from 'react';
 import { Language } from '../types';
 import { Search, MessageCircle, FileText, CheckCircle2, Sparkles, MapPin } from 'lucide-react';
+import { IMAGES, handleImageError } from '../assets/images';
 
 interface HeroProps {
   language: Language;
@@ -18,7 +19,7 @@ export const Hero: React.FC<HeroProps> = ({
   const isAr = language === 'ar';
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-purple-50/70 via-white to-slate-50 border-b border-purple-100/60 pt-8 pb-14">
+    <section className="relative overflow-hidden bg-gradient-to-b from-purple-50/70 via-white to-slate-50 border-b border-purple-100/60 pt-6 sm:pt-8 pb-10 sm:pb-14">
       {/* Subtle decorative background light glow */}
       <div 
         className="absolute top-0 right-1/4 w-96 h-96 bg-purple-200/30 rounded-full blur-3xl pointer-events-none -z-10"
@@ -31,15 +32,15 @@ export const Hero: React.FC<HeroProps> = ({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Split Screen 2-Column Hero */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Left Column: Brand Story & Search */}
           <div className="lg:col-span-7 flex flex-col justify-center">
-            {/* Quiet Kickers with subtle dot separator (No Pill Box) */}
-            <div className="flex items-center gap-2 text-xs font-semibold text-purple-900 tracking-wide mb-3">
+            {/* Quiet Kickers with subtle dot separator */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-semibold text-purple-900 tracking-wide mb-3">
               <span className="uppercase text-purple-700 font-bold">TrenDy EvenTy Atelier</span>
               <span aria-hidden="true" className="text-purple-400">·</span>
               <span className="text-slate-600 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-purple-600 inline" />
+                <MapPin className="w-3.5 h-3.5 text-purple-600 inline shrink-0" />
                 {isAr ? 'شبرا مصر، القاهرة' : 'Shoubra Masr, Cairo'}
               </span>
               <span aria-hidden="true" className="text-purple-400">·</span>
@@ -48,7 +49,7 @@ export const Hero: React.FC<HeroProps> = ({
 
             {/* Display Headline with text-wrap: balance */}
             <h1 
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight lg:leading-[1.15] mb-4"
+              className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight lg:leading-[1.15] mb-3 sm:mb-4"
               style={{ textWrap: 'balance' }}
             >
               {isAr ? (
@@ -63,7 +64,7 @@ export const Hero: React.FC<HeroProps> = ({
             </h1>
 
             {/* Subheading with exact occasions from catalogue */}
-            <p className="text-base sm:text-lg text-slate-700 leading-relaxed mb-6 max-w-2xl">
+            <p className="text-sm sm:text-base lg:text-lg text-slate-700 leading-relaxed mb-5 sm:mb-6 max-w-2xl">
               {isAr ? (
                 <>
                   كتالوج شامل لخدمات الطباعة الفاخرة، توزيعات الشموع والريزن المصنوعة يدوياً، وديكورات الحفلات. نجهز بالكامل:
@@ -82,7 +83,7 @@ export const Hero: React.FC<HeroProps> = ({
             </p>
 
             {/* Integrated Real-Time Quick Search Input */}
-            <div className="relative mb-6 max-w-xl">
+            <div className="relative mb-5 sm:mb-6 max-w-xl">
               <div className="absolute inset-y-0 start-0 flex items-center ps-3.5 pointer-events-none text-slate-400">
                 <Search className="w-5 h-5 text-purple-600" />
               </div>
@@ -92,29 +93,30 @@ export const Hero: React.FC<HeroProps> = ({
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={
                   isAr
-                    ? 'ابحث بالمنتج أو الخامة (مثل: كروت شخصية، رول اب، شمع صويا، ريزن، أكريليك، كانفاس...)'
-                    : 'Search products or materials (e.g. Business cards, Rollup, Soy wax, Resin, Acrylic, Canvas...)'
+                    ? 'ابحث بالمنتج أو الخامة (مثل: كروت، رول اب، شمع، ريزن...)'
+                    : 'Search products or materials (e.g. Cards, Rollup, Wax, Resin...)'
                 }
-                className="w-full ps-11 pe-4 py-3 bg-white border border-purple-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent shadow-xs transition-shadow"
+                className="w-full ps-11 pe-12 py-3 bg-white border border-purple-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-600 focus:border-transparent shadow-xs transition-shadow min-h-[44px]"
               />
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => onSearchChange('')}
-                  className="absolute inset-y-0 end-0 pe-3 flex items-center text-xs text-slate-400 hover:text-slate-600"
+                  className="absolute inset-y-0 end-0 pe-3 flex items-center text-xs font-semibold text-purple-600 hover:text-purple-800 min-h-[44px]"
                 >
                   {isAr ? 'مسح' : 'Clear'}
                 </button>
               )}
             </div>
 
-            {/* CTAs: WhatsApp Direct Chat + Instant Quote Modal */}
-            <div className="flex flex-wrap items-center gap-3 mb-6">
+            {/* CTAs: Responsive Stack on small mobile, row on tablet/desktop */}
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3 mb-6">
               <button
                 onClick={onRequestQuote}
                 type="button"
-                className="inline-flex items-center gap-2 px-5 py-3 text-sm font-bold text-white bg-purple-900 hover:bg-purple-800 active:bg-purple-950 rounded-xl shadow-sm hover:shadow transition-all focus-visible:ring-2 focus-visible:ring-purple-600"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-white bg-purple-900 hover:bg-purple-800 active:bg-purple-950 rounded-xl shadow-sm hover:shadow transition-all focus-visible:ring-2 focus-visible:ring-purple-600 min-h-[44px]"
               >
-                <FileText className="w-4 h-4" />
+                <FileText className="w-4 h-4 shrink-0" />
                 <span>{isAr ? 'طلب مقايسة وتسعيرة مخصصة' : 'Request Tailored Quote'}</span>
               </button>
 
@@ -124,15 +126,15 @@ export const Hero: React.FC<HeroProps> = ({
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-5 py-3 text-sm font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 rounded-xl transition-colors"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 text-sm font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-300 rounded-xl transition-colors min-h-[44px]"
               >
-                <MessageCircle className="w-4 h-4 text-emerald-600" />
+                <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                 <span>{isAr ? 'تواصل واتساب مع المبيعات' : 'Chat on WhatsApp with Sales'}</span>
               </a>
 
               <a
                 href="#catalogue"
-                className="inline-flex items-center gap-1.5 px-4 py-3 text-sm font-medium text-slate-700 hover:text-purple-900 hover:bg-purple-50/50 rounded-xl transition-colors"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:text-purple-900 hover:bg-purple-50/50 rounded-xl transition-colors min-h-[44px]"
               >
                 <span>{isAr ? 'استعراض الكتالوج' : 'View Catalogue'}</span>
                 <span aria-hidden="true">&darr;</span>
@@ -140,26 +142,28 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Hero Image with Measured Framing */}
+          {/* Right Column: Hero Image with Measured Framing & Guaranteed Fallback */}
           <div className="lg:col-span-5">
-            <div className="relative rounded-2xl overflow-hidden shadow-lg border border-purple-100 group">
+            <div className="relative rounded-2xl overflow-hidden shadow-lg border border-purple-100 group bg-purple-900">
               <img
-                src="/src/assets/images/trendy_hero_atelier_1791875439349.jpg"
+                src={IMAGES.heroAtelier}
+                onError={(e) => handleImageError(e, 'printing')}
                 alt="TrenDy EvenTy Printing Atelier and Event Decor Showcase"
-                className="w-full h-80 sm:h-96 lg:h-[420px] object-cover transition-transform duration-500 group-hover:scale-102"
+                className="w-full h-64 sm:h-80 lg:h-[420px] object-cover transition-transform duration-500 group-hover:scale-102"
                 referrerPolicy="no-referrer"
+                loading="eager"
               />
               {/* Measured contrast scrim */}
-              <div className="absolute inset-0 bg-gradient-to-t from-purple-950/80 via-purple-950/20 to-transparent flex flex-col justify-end p-6 text-white">
-                <span className="text-xs font-semibold text-amber-300 tracking-wider uppercase mb-1">
+              <div className="absolute inset-0 bg-gradient-to-t from-purple-950/85 via-purple-950/30 to-transparent flex flex-col justify-end p-4 sm:p-6 text-white">
+                <span className="text-[11px] sm:text-xs font-semibold text-amber-300 tracking-wider uppercase mb-1">
                   {isAr ? 'ورشة ومطبعة تريندي إيفنتي' : 'Trendy EvenTy Workshop'}
                 </span>
-                <h3 className="text-lg font-bold text-white leading-snug">
+                <h3 className="text-base sm:text-lg font-bold text-white leading-snug">
                   {isAr
                     ? 'جودة طباعة استثنائية وخامات مختارة بعناية لأجمل اللحظات'
                     : 'Exceptional Print Quality & Curated Materials for Every Moment'}
                 </h3>
-                <p className="text-xs text-purple-200 mt-1 font-mono">
+                <p className="text-[11px] sm:text-xs text-purple-200 mt-1 font-mono">
                   8 El basaa Street, Shoubra Masr · +20 103 145 0254
                 </p>
               </div>

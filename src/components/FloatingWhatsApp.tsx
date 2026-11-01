@@ -55,11 +55,11 @@ export const FloatingWhatsApp: React.FC<FloatingWhatsAppProps> = ({ language }) 
   };
 
   return (
-    <div className="fixed bottom-6 end-6 z-40 flex flex-col items-end">
+    <div className="fixed bottom-4 end-4 sm:bottom-6 sm:end-6 z-40 flex flex-col items-end max-w-full">
       {/* Expanded Quick Chat Window */}
       {isOpen && (
         <div 
-          className="mb-3 w-80 sm:w-92 bg-white rounded-2xl shadow-2xl border border-purple-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
+          className="mb-2 sm:mb-3 w-[calc(100vw-2rem)] max-w-sm sm:w-92 bg-white rounded-2xl shadow-2xl border border-purple-100 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-200"
           role="dialog"
           aria-label="WhatsApp Sales Chat"
         >

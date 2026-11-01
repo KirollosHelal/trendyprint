@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProductItem, Language } from '../types';
 import { X, MessageCircle, FileText, Check, ShieldCheck, Tag } from 'lucide-react';
+import { handleImageError } from '../assets/images';
 
 interface ItemDetailsModalProps {
   product: ProductItem | null;
@@ -33,18 +34,19 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200 flex flex-col"
+        className="bg-white rounded-2xl max-w-xl w-full max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200 flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Image Frame */}
-        <div className="relative aspect-16/10 w-full overflow-hidden bg-slate-100">
+        <div className="relative aspect-16/10 w-full overflow-hidden bg-purple-950">
           <img
             src={product.image}
+            onError={(e) => handleImageError(e, product.categoryId)}
             alt={name}
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"

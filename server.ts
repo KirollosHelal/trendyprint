@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import { createServer as createViteServer } from 'vite';
 import crypto from 'node:crypto';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { db, initDatabase, hashPassword, verifyPassword } from './src/server/db.ts';
 import { CATALOGUE_PRODUCTS } from './src/data/catalogueData.ts';
@@ -13,6 +14,16 @@ const __dirname = path.dirname(__filename);
 
 // Initialize DB schema & default admin credentials
 initDatabase();
+
+// Migrate any legacy database records pointing to /src/assets/images/ to /images/
+try {
+  db.exec(`
+    UPDATE products SET image = REPLACE(image, '/src/assets/images/', '/images/') WHERE image LIKE '/src/assets/images/%';
+    UPDATE portfolio SET image = REPLACE(image, '/src/assets/images/', '/images/') WHERE image LIKE '/src/assets/images/%';
+  `);
+} catch (e) {
+  // Ignore migration error if tables are being initialized
+}
 
 // Seed initial products, materials, portfolio if empty
 seedInitialTables();
@@ -469,7 +480,7 @@ async function startServer() {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         id, p.categoryId, p.nameEn, p.nameAr, p.taglineEn || '', p.taglineAr || '',
-        p.descriptionEn || '', p.descriptionAr || '', p.image || '/src/assets/images/trendy_print_services_1791875459940.jpg',
+        p.descriptionEn || '', p.descriptionAr || '', p.image || '/images/trendy_print_services_1791875459940.jpg',
         p.fallbackGradient || 'from-purple-900 to-indigo-900',
         JSON.stringify(p.materialsUsed || []), JSON.stringify(p.materialsUsedAr || []),
         JSON.stringify(p.suggestedOccasions || []), JSON.stringify(p.suggestedOccasionsAr || []),
@@ -608,12 +619,28 @@ async function startServer() {
     }
   });
 
-  // Mount Vite development middlewares in dev
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: 'spa',
-  });
-  app.use(vite.middlewares);
+  // Serve static assets from public folder (guarantees /images/*.jpg loads on any domain)
+  app.use('/images', express.static(path.join(__dirname, 'public/images')));
+  app.use(express.static(path.join(__dirname, 'public')));
+
+  const isProduction = process.env.NODE_ENV === 'production' || process.argv.includes('--production');
+  const distPath = path.join(__dirname, 'dist');
+
+  if (isProduction && fs.existsSync(distPath)) {
+    // In production, serve the built SPA dist bundle
+    app.use(express.static(distPath));
+    app.get('*', (req: Request, res: Response, next: NextFunction) => {
+      if (req.path.startsWith('/api')) return next();
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
+    // Mount Vite development middlewares in dev
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  }
 
   const PORT = 3000;
   app.listen(PORT, '0.0.0.0', () => {

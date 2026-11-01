@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ProductItem, CategoryId, Language } from '../types';
 import { CATALOGUE_PRODUCTS } from '../data/catalogueData';
 import { MessageCircle, FileText, Eye, Sparkles, Filter, Layers } from 'lucide-react';
+import { handleImageError } from '../assets/images';
 
 interface CatalogueSectionProps {
   language: Language;
@@ -199,9 +200,10 @@ export const CatalogueSection: React.FC<CatalogueSectionProps> = ({
                   className="group bg-white rounded-xl border border-slate-200 hover:border-purple-300 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden"
                 >
                   {/* Lead with imagery (65-75% card visual emphasis) */}
-                  <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100">
+                  <div className="relative aspect-4/3 w-full overflow-hidden bg-purple-950">
                     <img
                       src={product.image}
+                      onError={(e) => handleImageError(e, product.categoryId)}
                       alt={name}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-103"
                       referrerPolicy="no-referrer"
